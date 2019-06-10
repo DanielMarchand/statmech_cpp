@@ -51,7 +51,7 @@ void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
     double distance;
     for (int i=0; i<natoms; i++){
         for (int j=i+1; j<natoms; j++){
-            distance = (atoms[i].coordinate - atoms[j].coordinate).norm;
+            distance = (atoms[i].coordinate - atoms[j].coordinate).norm();
             potential_e = potential_e + 
                           (1.0/pow(distance,12) -
                            1.0/pow(distance, 6));
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
         // Randomly displace the selected particles
         //TODO
         // Compute potential energy after the move
-        get_U(natoms, atoms, new_potential_e);
+        //get_U(natoms, atoms, new_potential_e);
 
     }
 }
