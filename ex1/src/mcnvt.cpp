@@ -1,25 +1,15 @@
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <vector>
+#include <random>
 // #include "routines.hh"  
 
-//SP4E built-in types
-//UInt = unsigned int;
-//Real = double;
-//complex = std::complex<Real>;
-
-// These functioins should later be moved to routines.cpp
+// These functions should later be moved to routines.cpp
 #include <fstream>
 #include <Eigen/Dense>
 #include <cmath>
-struct Atom {
-    std::string element;
-    //double x, y, z;
-    Eigen::Vector3d coordinate;
-};
-void readdata(std::string dataxyz, std::vector<Atom> &atoms, int &natoms){
-
-
+Eigen::MatrixX3d readdata(std::string dataxyz,  int &n_atoms){
     std::ifstream input_stream(dataxyz.c_str());
     std::string input_line;
     if (input_stream.is_open() == false){
@@ -27,49 +17,52 @@ void readdata(std::string dataxyz, std::vector<Atom> &atoms, int &natoms){
         throw;
     }
 
-    Eigen::MatrixX3d eigen_atoms;
+    std::vector<double> tmp_storage;
     std::string foo_element;
     while (input_stream.good()){
         getline(input_stream, input_line);
-        //TODO: figure out a way to read the natoms separately 
+        //TODO: figure out a way to read the n_atoms separately 
         if (input_line[0] == '#'|| input_line.size() == 0){
             continue;
         }
 
         std::stringstream inputline_stream(input_line);
 
-        Atom this_atom;
-        //inputline_stream >> this_atom.element 
-        //>> this_atom.coordinate[0] >> this_atom.coordinate[1] >> this_atom.coordinate[2];
-        //atoms.push_back(this_atom);
-        std::cout << 'debug1' << std::endl;
+        double x,y,z;
         inputline_stream >> foo_element
-          >> eigen_atoms.row(eigen_atoms.rows()-1)[0]
-          >> eigen_atoms.row(eigen_atoms.rows()-1)[1]
-          >> eigen_atoms.row(eigen_atoms.rows()-1)[2];
-
-
-    }
-    std::cout << 'debug2' << std::endl;
-    for (int i=0; i<eigen_atoms.rows(); i++){
-        std::cout << eigen_atoms.row(i) << std::endl;
+          >> x >> y >> z;
+        tmp_storage.push_back(x);
+        tmp_storage.push_back(y);
+        tmp_storage.push_back(z);
     }
     input_stream.close();
-    natoms = eigen_atoms.rows();
-}
-//Compute the potential energy
-inline void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
 
+    // store the result into an Eigen matrix
+    int num_columns = 3;
+    int num_rows = tmp_storage.size()/num_columns;
+    Eigen::MatrixX3d atoms(num_rows, num_columns);
+    int insert_row;
+    int insert_col;
+    for (unsigned int i=0; i<tmp_storage.size(); i++){
+        insert_col = i%3;
+        insert_row = i/3;
+        atoms.row(insert_row).col(insert_col) << tmp_storage.at(i);
+    }
+
+    n_atoms = atoms.rows();
+    return atoms;
+}
+
+//Compute the potential energy
+template <typename Derived>
+void get_U(int n_atoms, const Eigen::MatrixBase<Derived> &atoms, double &potential_e){
     potential_e = 0.0;
-    Eigen::Vector3d distance;
-    double distance_norm;
-    for (int i=0; i<natoms; i++){
-        for (int j=i+1; j<natoms; j++){
-            distance = atoms[i].coordinate - atoms[j].coordinate;
-            distance_norm = distance.norm();
-            potential_e = potential_e + 
-                          (1.0/pow(distance_norm,12) -
-                           1.0/pow(distance_norm, 6));
+    double d_2, d_6;
+    for (int i=0; i<n_atoms; i++){
+        for (int j=i+1; j<n_atoms; j++){
+            d_2 = (atoms.row(i)-atoms.row(j)).squaredNorm();
+            d_6 = d_2*d_2*d_2;
+            potential_e = potential_e + 1.0/(d_6*d_6) - 1.0/(d_6);
         }
     }
     potential_e = potential_e*4.0;
@@ -80,11 +73,10 @@ inline void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
 int main(int argc, char **argv)
 {
     // Dummy arguments for now
-    int seed = 1357;
+    int seed = 1237;
     double temp = 0.23;
     std::string dataxyz = "input_dummy.xyz";
-    //int nstep = 10000000;
-    int nstep = 5000;
+    int nstep =  10000000; // 5000
     int stridetrj = 50000;
     int stridelog = 100;
     double mcstep = 0.01;
@@ -111,47 +103,62 @@ int main(int argc, char **argv)
     //double mcstep;
     //std::stringstream(argv[7]) >> mcstep;
     //std::string outputf = argv[8];
-    //// beta is derived from temp
-    //double beta;
-    //beta = 1.0/temp;
-    ////TODO: initialize random number generator
+    // beta is derived from temp
+    double beta;
+    beta = 1.0/temp;
+    // initialize random number generator
+    std::random_device rd;
+    //std::mt19937 rng(rd());
+    std::mt19937 rng(seed);
+    // generate the gaussian function to be used later
+    std::normal_distribution<double> random_gaussian(0, mcstep);
 
     // Read the box and the number of atoms
-    std::vector<Atom> atoms;
-    int natoms;
-    readdata(dataxyz, atoms, natoms);
-    for (int i = 0; i < natoms; i++){
-        Atom atom = atoms[i];
-        std::cout << atom.element << " "
-        << atom.coordinate[0] << " " 
-        << atom.coordinate[1] << " " 
-        << atom.coordinate[2] << std::endl;
-    }
+    int n_atoms;
+    Eigen::MatrixX3d atoms = readdata(dataxyz, n_atoms);
+    std::uniform_int_distribution<int> random_uniform_int(0, n_atoms-1);
+    std::uniform_real_distribution<double> random_uniform_real(0, 1);
 
     // Start MC code
     int attempts = 0;
     int accepted = 0;
+    int random_index;
     double potential_e;
     double old_potential_e;
     double new_potential_e;
+    Eigen::MatrixX3d oldposition;
     // Compute potential energy of the initial configuration
-    get_U(natoms, atoms, potential_e);
-    std::cout << "potential_e: " << potential_e << std::endl;
+    get_U(n_atoms, atoms, potential_e);
     for (int istep=0; istep<nstep; istep++){
         attempts = attempts + 1;
         // Save the potential energy before the move
         old_potential_e = potential_e;
-        // Select a particle randomly
-        //TODO
+        // Randomly select a particle for displacement
+        random_index = random_uniform_int(rng);
         // Save the original position
-        //TODO
+        oldposition = atoms.row(random_index);
         // Randomly displace the selected particles
-        //TODO
+        for (int i=0; i<3; i++){
+            atoms.row(random_index)[i] += random_gaussian(rng);
+        }
         // Compute potential energy after the move
-        std::cout << "istep: " << istep << std::endl;
-        get_U(natoms, atoms, new_potential_e);
+        get_U(n_atoms, atoms, new_potential_e);
+
+        // Acceptance test
+        double del_E;
+        del_E  = new_potential_e - old_potential_e;
+        if (random_uniform_real(rng) < exp(-beta*(new_potential_e-old_potential_e))){
+            accepted += 1;
+            potential_e = new_potential_e;
+        }
+        else{
+            atoms.row(random_index) = oldposition;
+        }
+        if (istep % stridelog == 0){
+            std::cout << "step: " << istep 
+              << " accepted: " << accepted 
+              << " E: "<< potential_e << std::endl;
+        }
 
     }
-    //std::cout << std::log(0.0) << std::endl;
-    std::cout << errno << std::endl;
 }
