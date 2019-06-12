@@ -27,6 +27,8 @@ void readdata(std::string dataxyz, std::vector<Atom> &atoms, int &natoms){
         throw;
     }
 
+    Eigen::MatrixX3d eigen_atoms;
+    std::string foo_element;
     while (input_stream.good()){
         getline(input_stream, input_line);
         //TODO: figure out a way to read the natoms separately 
@@ -37,12 +39,23 @@ void readdata(std::string dataxyz, std::vector<Atom> &atoms, int &natoms){
         std::stringstream inputline_stream(input_line);
 
         Atom this_atom;
-        inputline_stream >> this_atom.element 
-        >> this_atom.coordinate[0] >> this_atom.coordinate[1] >> this_atom.coordinate[2];
-        atoms.push_back(this_atom);
+        //inputline_stream >> this_atom.element 
+        //>> this_atom.coordinate[0] >> this_atom.coordinate[1] >> this_atom.coordinate[2];
+        //atoms.push_back(this_atom);
+        std::cout << 'debug1' << std::endl;
+        inputline_stream >> foo_element
+          >> eigen_atoms.row(eigen_atoms.rows()-1)[0]
+          >> eigen_atoms.row(eigen_atoms.rows()-1)[1]
+          >> eigen_atoms.row(eigen_atoms.rows()-1)[2];
+
+
+    }
+    std::cout << 'debug2' << std::endl;
+    for (int i=0; i<eigen_atoms.rows(); i++){
+        std::cout << eigen_atoms.row(i) << std::endl;
     }
     input_stream.close();
-    natoms = atoms.size();
+    natoms = eigen_atoms.rows();
 }
 //Compute the potential energy
 inline void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
