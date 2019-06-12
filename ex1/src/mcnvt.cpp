@@ -45,16 +45,18 @@ void readdata(std::string dataxyz, std::vector<Atom> &atoms, int &natoms){
     natoms = atoms.size();
 }
 //Compute the potential energy
-void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
+inline void get_U(int natoms, std::vector<Atom> &atoms, double &potential_e){
 
     potential_e = 0.0;
-    double distance;
+    Eigen::Vector3d distance;
+    double distance_norm;
     for (int i=0; i<natoms; i++){
         for (int j=i+1; j<natoms; j++){
-            distance = (atoms[i].coordinate - atoms[j].coordinate).norm();
+            distance = atoms[i].coordinate - atoms[j].coordinate;
+            distance_norm = distance.norm();
             potential_e = potential_e + 
-                          (1.0/pow(distance,12) -
-                           1.0/pow(distance, 6));
+                          (1.0/pow(distance_norm,12) -
+                           1.0/pow(distance_norm, 6));
         }
     }
     potential_e = potential_e*4.0;
@@ -68,7 +70,8 @@ int main(int argc, char **argv)
     int seed = 1357;
     double temp = 0.23;
     std::string dataxyz = "input_dummy.xyz";
-    int nstep = 10000000;
+    //int nstep = 10000000;
+    int nstep = 5000;
     int stridetrj = 50000;
     int stridelog = 100;
     double mcstep = 0.01;
@@ -120,6 +123,7 @@ int main(int argc, char **argv)
     double new_potential_e;
     // Compute potential energy of the initial configuration
     get_U(natoms, atoms, potential_e);
+    std::cout << "potential_e: " << potential_e << std::endl;
     for (int istep=0; istep<nstep; istep++){
         attempts = attempts + 1;
         // Save the potential energy before the move
@@ -131,7 +135,10 @@ int main(int argc, char **argv)
         // Randomly displace the selected particles
         //TODO
         // Compute potential energy after the move
-        //get_U(natoms, atoms, new_potential_e);
+        std::cout << "istep: " << istep << std::endl;
+        get_U(natoms, atoms, new_potential_e);
 
     }
+    //std::cout << std::log(0.0) << std::endl;
+    std::cout << errno << std::endl;
 }
