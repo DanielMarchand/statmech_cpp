@@ -5,7 +5,8 @@ While cmake 'should' be a bit clever in finding Eigen, in practice I needed to i
 Eigen in the following way:
 
 clone Eigen3 into a directory of your choice:
-> cd Eigne3 dir 
+> git clone https://github.com/eigenteam/eigen-git-mirror.git
+> cd eigen-git-mirror
 > mkdir build
 > cd build
 > cmake ..
