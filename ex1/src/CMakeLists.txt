@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 3.0)
+find_package (Eigen3 REQUIRED NO_MODULE)
+project (mcnvt)
+add_executable (mcnvt mcnvt.cpp)
+target_link_libraries (mcnvt Eigen3::Eigen)
