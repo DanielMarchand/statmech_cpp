@@ -8,36 +8,29 @@
 int main(int argc, char **argv)
 {
     // Dummy arguments for now
-    int seed = 1237;
-    double temp = 0.23;
-    std::string dataxyz = "input_dummy.xyz";
-    int nstep =  10000000; // 5000
-    int stridetrj = 50000;
-    int stridelog = 100;
-    double mcstep = 0.01;
-    std::string outputf = "output_dummy.xyz";
 
     //TODO: enable command-line arguments later
-    //if (argc != 9)
-    //{
-    //    std::cout << "Usage: " << argv[0] << " seed temp dataxyz nstep stridetrj stridelog mcstep outputf " << std::endl;
-    //    std::exit(EXIT_FAILURE);
-    //}
+    if (argc != 9)
+    {
+        std::cout << "Usage: " << argv[0] << " seed temp dataxyz nstep stridetrj stridelog mcstep outputf " << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
-    //// Read input arguments
-    //int seed;
-    //std::stringstream(argv[1]) >> seed;
-    //double temp;
-    //std::stringstream(argv[2]) >> temp;
-    //std::string dataxyz = argv[3];
-    //int nstep;
-    //std::stringstream(argv[4]) >> nstep;
-    //int stridetrj;
-    //std::stringstream(argv[5]) >> stridetrj;
-    //std::string stridelog = argv[6];
-    //double mcstep;
-    //std::stringstream(argv[7]) >> mcstep;
-    //std::string outputf = argv[8];
+    // Read input arguments
+    int seed;
+    std::stringstream(argv[2]) >> seed;
+    double temp;
+    std::stringstream(argv[2]) >> temp;
+    std::string dataxyz = argv[3];
+    int nstep;
+    std::stringstream(argv[4]) >> nstep;
+    int stridetrj;
+    std::stringstream(argv[5]) >> stridetrj;
+    int stridelog;
+    std::stringstream(argv[6]) >> stridelog;
+    double mcstep;
+    std::stringstream(argv[7]) >> mcstep;
+    std::string outputf = argv[8];
     // beta is derived from temp
     double beta;
     beta = 1.0/temp;
