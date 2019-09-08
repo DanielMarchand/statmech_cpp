@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     //TODO: enable command-line arguments later
     if (argc != 9)
     {
-        std::cout << "Usage: " << argv[0] << " seed temp dataxyz nstep stridetrj stridelog mcstep outputf " << std::endl;
+        std::cout << "Usage: " << argv[0] << " seed temp dataxyz nstep stridetrj stridelog mcstep outputxyz " << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     std::stringstream(argv[6]) >> stridelog;
     double mcstep;
     std::stringstream(argv[7]) >> mcstep;
-    std::string outputf = argv[8];
+    std::string outputxyz = argv[8];
     // beta is derived from temp
     double beta;
     beta = 1.0/temp;
@@ -86,6 +86,11 @@ int main(int argc, char **argv)
             std::cout << "step: " << istep 
               << " accepted: " << accepted 
               << " E: "<< potential_e << std::endl;
+        }
+        if (istep % stridetrj == 0){
+           //put the origin of the Cartesian coordinate system in the CM
+           //call adjustqcm(natoms,q)
+           write_xyz(outputxyz, istep, n_atoms, atoms);
         }
 
     }
